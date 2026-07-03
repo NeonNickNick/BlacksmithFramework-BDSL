@@ -1,0 +1,79 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Blacksmith DSL",
+	"scopeName": "source.bdsl",
+    "patterns": [
+        {
+            "name": "comment.block.bdsl",
+            "begin": "//",
+            "end": "$"
+        },
+        {
+            "name": "comment.multiline.bdsl",
+            "begin": "\/\\*",
+            "end": "\\*\/"
+        },
+        {
+            "name": "entity.control.bdsl",
+            "match": "\\[(skillpackagedefinition|skill|check|declare)\\]"
+        },
+        {
+            "name": "entity.paramname.bdsl",
+            "match": "\\[.*?\\]"
+        },
+        {
+            "name": "keyword.sentencemark.bdsl",
+            "match": "<(require|takemark|resource|use|attack|defense)>"
+        },
+        {
+            "name": "constant.other.bdsl",
+            "match": "\\b(Physical|CommonReduction|DefaultReduction|true|false|Iron|HP|GoldIron|Space|Time|Magic)\\b"
+        },
+        {
+            "name": "constant.lazy.bdsl",
+            "match": "@\\b[A-Za-z_][A-Za-z0-9_]*\\b@"
+        },
+        {
+            "name": "constant.builtin.bdsl",
+            "match": "\\b__skillparam__\\b"
+        },
+        {
+            "name": "variable.parameter.bdsl",
+            "match": "\\[[A-Za-z_][A-Za-z0-9_]*\\]"
+        },
+        {
+            "name": "constant.numeric.bdsl",
+            "match": "\\b(\\d+(\\.\\d+)?)\\b"
+        },
+        {
+            "name": "punctuation.section.block.bdsl",
+            "match": "\\{|\\}|\\(|\\)|\\[|\\]|->"
+        },
+        {
+            "name": "keyword.operator.bdsl",
+            "match": "(@|>=|<=|==|!=|\\*|\\+|\\-|\\/)"
+        },
+        {
+            "name": "string.quoted.double.bdsl",
+            "begin": "\"",
+            "end": "\""
+        }
+    ],
+    "repository": {
+        "skill": {
+            "name": "meta.class.bdsl",
+            "begin": "\\b(skill)\\s*\\(",
+            "end": "\\}",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.bdsl"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "$self"
+                }
+            ]
+        }
+    }
+}

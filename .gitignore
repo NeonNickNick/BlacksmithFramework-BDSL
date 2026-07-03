@@ -1,0 +1,122 @@
+# --- Node.js / VS Code Extension ---
+node_modules/
+*.vsix
+.env
+
+# --- .NET Build Output ---
+bin/
+obj/
+language-server/bin/
+language-server/obj/
+language-server/.vs/
+**/.vs/
+**/.idea/
+**/.vscode/
+.vs/
+.vscode/
+.claude/
+CLAUDE.md
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Editor ---
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+
+# --- IDE ---
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Claude
+CLAUDE.md
+**/.claude/
+
+# Codex
+AGENTS.md
+SERVER_ARCHITECTURE.md
+
+# IDE folders
+**/.vs/
+**/.idea/
+**/.vscode/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+*.cache
+*.lscache
+Thumbs.db
+Desktop.ini
+
+# .NET test and coverage
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+**/coverage/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/
+
+# Frontend
+**/node_modules/
+**/dist/
+**/build/
+**/.pnpm-store/
+**/.npm/
+**/.yarn/
+**/.parcel-cache/
+**/.next/
+**/.nuxt/
+**/.svelte-kit/
+
+# Environment
+.env
+.env.*
+
+# Local app settings
+appsettings.Local.json
+appsettings.*.local.json
+
+# Local documentation
+docs/
+
+# LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc

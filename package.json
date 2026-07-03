@@ -1,0 +1,121 @@
+{
+  "name": "blacksmith-dsl-editor",
+  "displayName": "Blacksmith DSL Editor",
+  "description": "Syntax highlighting and editing support for Blacksmith DSL (.bdsl) files.",
+  "version": "0.0.1",
+  "publisher": "NeonNickNick",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/blacksmith-dsl-editor"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "blacksmith-dsl-editor",
+      "aliases": ["Blacksmith DSL", "blacksmith-dsl-editor"],
+      "extensions": [".bdsl"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "blacksmith-dsl-editor",
+      "scopeName": "source.bdsl",
+      "path": "./syntaxes/blacksmith-dsl-editor.tmLanguage.json"
+    }],
+    "configurationDefaults": {
+      "[blacksmith-dsl-editor]": {
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+      },
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": "comment.block.bdsl, comment.multiline.bdsl",
+            "settings": {
+              "foreground": "#949494",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": "entity.control.bdsl",
+            "settings": {
+              "foreground": "#ff8181"
+            }
+          },
+          {
+            "scope": "entity.paramname.bdsl",
+            "settings": {
+              "foreground": "#d7f2ff"
+            }
+          },
+          {
+            "scope": "keyword.sentencemark.bdsl",
+            "settings": {
+              "foreground": "#dbffd0",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": "constant.other.bdsl",
+            "settings": {
+              "foreground": "#ffffff",
+              "fontStyle": "bold"
+            }
+          },
+          {
+            "scope": "constant.lazy.bdsl",
+            "settings": {
+              "foreground": "#b85cff",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": "constant.builtin.bdsl",
+            "settings": {
+              "foreground": "#ecff5c",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": "variable.parameter.bdsl",
+            "settings": {
+              "foreground": "#9CDCFE"
+            }
+          },
+          {
+            "scope": "constant.numeric.bdsl",
+            "settings": {
+              "foreground": "#ffaa7c"
+            }
+          },
+          {
+            "scope": "punctuation.section.block.bdsl",
+            "settings": {
+              "foreground": "#ffffff"
+            }
+          },
+          {
+            "scope": "keyword.operator.bdsl",
+            "settings": {
+              "foreground": "#D16969",
+              "fontStyle": "bold"
+            }
+          },
+          {
+            "scope": "string.quoted.double.bdsl",
+            "settings": {
+              "foreground": "#ffc2aa"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
