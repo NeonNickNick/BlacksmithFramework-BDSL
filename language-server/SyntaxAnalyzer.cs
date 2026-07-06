@@ -138,6 +138,7 @@ namespace BdslValidator
 
         private void ParseSkillPackageDefinition()
         {
+            bool hasAuto = false;
             Expect(TokenType.Keyword, "[skillpackagedefinition]");
             Expect(TokenType.LeftParenthesis);
             Expect(TokenType.String);  // profession name
@@ -151,7 +152,15 @@ namespace BdslValidator
                 var t = Peek();
                 if (t?.Type == TokenType.Keyword && t.Value == "[skill]")
                 {
-                    ParseSkill();
+                    bool isAuto = ParseSkill();
+                    if(hasAuto && isAuto)
+                    {
+                        ThrowError(t!, "[skillpackagedefinition]内部只允许有一个\"auto\"[skill]块");
+                    }
+                    if(!hasAuto && isAuto)
+                    {
+                        hasAuto = true;
+                    }
                 }
                 else
                 {
@@ -166,7 +175,7 @@ namespace BdslValidator
 
         #region Skill Block
 
-        private void ParseSkill()
+        private bool ParseSkill()
         {
             var skillToken = Peek();
             Expect(TokenType.Keyword, "[skill]");
@@ -222,6 +231,7 @@ namespace BdslValidator
                 ThrowError(skillToken!, "每个[skill]必须有一个[declare]块");
 
             Expect(TokenType.RightBrace);
+            return isAuto;
         }
 
         #endregion

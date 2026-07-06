@@ -58,11 +58,11 @@ namespace BdslValidator
         public static string SkillParam = "__skillparam__";
         public static HashSet<string> DefenseTypes = new()
         {
-            "DefaultReduction"
+            "CommonReduction"
         };
         public static HashSet<string> DefenseAnalyzers = new()
         {
-            "CommonReduction"
+            "DefaultReduction"
         };
     }
 }

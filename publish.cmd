@@ -6,7 +6,7 @@ echo ============================================
 cd /d "%~dp0"
 
 echo.
-echo [1/3] Building C# validator...
+echo [1/5] Building C# validator...
 call build-validator.cmd --no-pause
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Validator build failed!
@@ -18,7 +18,25 @@ REM build-validator.cmd cd's into language-server; restore working dir
 cd /d "%~dp0"
 
 echo.
-echo [2/3] Installing vsce...
+echo [2/5] Installing npm dependencies...
+call npm install
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: npm install failed!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo [3/5] Compiling TypeScript...
+call npx tsc -p ./
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: TypeScript compilation failed! See errors above.
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo [4/5] Installing vsce...
 call npm install -g @vscode/vsce
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to install vsce!
@@ -27,7 +45,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
-echo [3/3] Packaging VSIX...
+echo [5/5] Packaging VSIX...
 call vsce package
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Package failed!

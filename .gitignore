@@ -1,21 +1,35 @@
 # --- Node.js / VS Code Extension ---
 node_modules/
+**/node_modules/
 *.vsix
 .env
+.env.*
 
 # --- .NET Build Output ---
-bin/
-obj/
-language-server/bin/
-language-server/obj/
-language-server/.vs/
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# --- IDE ---
 **/.vs/
 **/.idea/
 **/.vscode/
-.vs/
-.vscode/
-.claude/
+!.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# --- Claude / Codex ---
 CLAUDE.md
+AGENTS.md
+SERVER_ARCHITECTURE.md
+**/.claude/
 
 # --- OS ---
 .DS_Store
@@ -29,63 +43,26 @@ Desktop.ini
 \#*\#
 .\#*
 
-# --- IDE ---
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
-
-
-# Build outputs
-**/bin/
-**/obj/
-**/out/
-**/publish/
-
-# User-specific files
-*.user
-*.rsuser
-*.suo
-*.userosscache
-*.sln.docstates
-
-# Claude
-CLAUDE.md
-**/.claude/
-
-# Codex
-AGENTS.md
-SERVER_ARCHITECTURE.md
-
-# IDE folders
-**/.vs/
-**/.idea/
-**/.vscode/
-
-# Logs and temp files
+# --- Logs and temp files ---
 *.log
 *.tmp
 *.temp
 *.cache
 *.lscache
-Thumbs.db
-Desktop.ini
 
-# .NET test and coverage
+# --- .NET test and coverage ---
 **/TestResults/
 *.trx
 *.coverage
 *.coveragexml
 **/coverage/
 
-# NuGet
+# --- NuGet ---
 *.nupkg
 *.snupkg
 **/packages/
 
-# Frontend
-**/node_modules/
+# --- Frontend ---
 **/dist/
 **/build/
 **/.pnpm-store/
@@ -96,18 +73,14 @@ Desktop.ini
 **/.nuxt/
 **/.svelte-kit/
 
-# Environment
-.env
-.env.*
-
-# Local app settings
+# --- Local app settings ---
 appsettings.Local.json
 appsettings.*.local.json
 
-# Local documentation
+# --- Local documentation ---
 docs/
 
-# LaTeX
+# --- LaTeX ---
 *.aux
 *.bbl
 *.bcf

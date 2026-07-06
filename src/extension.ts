@@ -1,24 +1,25 @@
-const vscode = require('vscode');
-const child_process = require('child_process');
-const path = require('path');
+import * as vscode from 'vscode';
+import * as child_process from 'child_process';
+import * as path from 'path';
 
 // ---------------------------------------------------------------------------
 // Activation
 // ---------------------------------------------------------------------------
 
-/** @type {vscode.DiagnosticCollection} */
-let diagnosticCollection;
+let diagnosticCollection: vscode.DiagnosticCollection;
 
 /**
  * Activate the extension.
- * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+export function activate(context: vscode.ExtensionContext): void {
     // ---- formatter --------------------------------------------------------
     const formatter = vscode.languages.registerDocumentFormattingEditProvider(
         'blacksmith-dsl-editor',
         {
-            provideDocumentFormattingEdits(document, options) {
+            provideDocumentFormattingEdits(
+                document: vscode.TextDocument,
+                options: vscode.FormattingOptions
+            ): vscode.TextEdit[] {
                 const text = document.getText();
                 const formatted = formatBlacksmithDSL(text, options);
 
@@ -38,7 +39,11 @@ function activate(context) {
     const rangeFormatter = vscode.languages.registerDocumentRangeFormattingEditProvider(
         'blacksmith-dsl-editor',
         {
-            provideDocumentRangeFormattingEdits(document, range, options) {
+            provideDocumentRangeFormattingEdits(
+                document: vscode.TextDocument,
+                range: vscode.Range,
+                options: vscode.FormattingOptions
+            ): vscode.TextEdit[] {
                 const text = document.getText(range);
                 const formatted = formatBlacksmithDSL(text, options);
 
@@ -64,7 +69,7 @@ function activate(context) {
         vscode.workspace.onDidSaveTextDocument(doc => validateDocument(doc, validatorPath))
     );
     // Throttled re-validate on change (every 500 ms)
-    const changeTimers = new Map();
+    const changeTimers = new Map<string, NodeJS.Timeout>();
     context.subscriptions.push(
         vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.languageId !== 'blacksmith-dsl-editor') return;
@@ -88,34 +93,35 @@ function activate(context) {
 /**
  * Run the C# validator as a child process, feeding the document text via
  * stdin, and update the diagnostic collection with the result.
- *
- * @param {vscode.TextDocument} document
- * @param {string} validatorPath
  */
-function validateDocument(document, validatorPath) {
+function validateDocument(document: vscode.TextDocument, validatorPath: string): void {
     if (document.languageId !== 'blacksmith-dsl-editor') return;
 
     const child = child_process.spawn(validatorPath, [], {
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe'] as const,
         windowsHide: true
     });
 
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', data => { stdout += data.toString(); });
-    child.stderr.on('data', data => { stderr += data.toString(); });
+    child.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
+    child.stderr.on('data', (data: Buffer) => { stderr += data.toString(); });
 
-    child.on('close', code => {
+    child.on('close', (code: number | null) => {
         if (code !== 0 || stderr.length > 0) {
             // Validator crashed — clear diagnostics, don't annoy the user
             diagnosticCollection.delete(document.uri);
             return;
         }
 
-        const diagnostics = [];
+        const diagnostics: vscode.Diagnostic[] = [];
         try {
-            const result = JSON.parse(stdout);
+            const result = JSON.parse(stdout) as {
+                hasError?: boolean;
+                errorSpans?: ErrorSpan[];
+                message?: string;
+            };
             if (result.hasError) {
                 const spans = result.errorSpans || [];
                 const msg = result.message || 'Syntax error';
@@ -123,7 +129,7 @@ function validateDocument(document, validatorPath) {
                 for (const span of spans) {
                     const line = Math.max(0, (span.line || 1) - 1);       // 1-based → 0-based
                     const startCol = Math.max(0, (span.startColumn || 1) - 1);
-                    const endCol   = Math.max(startCol + 1, span.endColumn || span.startColumn || 1);
+                    const endCol = Math.max(startCol + 1, span.endColumn || span.startColumn || 1);
                     // C# endColumn is 1-based inclusive — VS Code expects exclusive,
                     // so inclusive endColumn means "last char position", exclusive is endColumn.
                     const range = new vscode.Range(line, startCol, line, endCol);
@@ -153,6 +159,21 @@ function validateDocument(document, validatorPath) {
 }
 
 // ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface ErrorSpan {
+    line?: number;
+    startColumn?: number;
+    endColumn?: number;
+}
+
+interface CommentRemovalResult {
+    cleanLine: string;
+    stillInBlockComment: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Formatter
 // ---------------------------------------------------------------------------
 
@@ -165,12 +186,8 @@ function validateDocument(document, validatorPath) {
  *  - Line comments (//) and block comments (slash-star ... star-slash) are ignored for
  *    brace counting so braces inside comments don't affect indentation.
  *  - Empty lines are preserved without trailing whitespace.
- *
- * @param {string} text  Raw document text.
- * @param {vscode.FormattingOptions} options
- * @returns {string} Formatted text.
  */
-function formatBlacksmithDSL(text, options) {
+function formatBlacksmithDSL(text: string, options: vscode.FormattingOptions): string {
     const indentChar = options.insertSpaces ? ' ' : '\t';
     const indentSize = options.tabSize;
 
@@ -179,16 +196,17 @@ function formatBlacksmithDSL(text, options) {
 
     // ---- step 2: collapse empty bracket pairs across lines FIRST -------
     //  "{\n}" → "{}"   "(\n)" → "()"   "[\n]" → "[]"
+    lines = standardizeLineBreaks(lines);
     lines = collapseEmptyBrackets(lines);
 
     // ---- step 3: simple indent — close before, open after -------------
     // Same-line ( ) and { } pairs cancel out via a stack, so only
     // *unmatched* brackets affect indentation.  Everything else is the
     // simplest possible rule: close → outdent before, open → indent after.
-    const formattedLines = [];
+    const formattedLines: string[] = [];
     let indentLevel = 0;
     let inBlockComment = false;
-
+    let nextClose = 0;
     for (const rawLine of lines) {
         if (rawLine.length === 0) {
             formattedLines.push('');
@@ -199,7 +217,7 @@ function formatBlacksmithDSL(text, options) {
         inBlockComment = stillInBlockComment;
 
         // Same-line pair cancellation via stack
-        const stack = [];
+        const stack: string[] = [];
         let closeCount = 0;
         for (const ch of cleanLine) {
             if (ch === '(' || ch === '{') {
@@ -220,7 +238,16 @@ function formatBlacksmithDSL(text, options) {
         }
         const openCount = stack.length;   // unmatched opens
 
-        indentLevel = Math.max(0, indentLevel - closeCount);
+        if(cleanLine.trim() === '}'){
+            nextClose = closeCount;
+        }
+        indentLevel = Math.max(0, indentLevel - nextClose);
+        nextClose = closeCount;
+
+        if(cleanLine.trim() === '}'){
+            nextClose = 0;
+        }
+        
 
         const indentation = indentChar.repeat(indentLevel * indentSize);
         formattedLines.push(indentation + rawLine.trimStart());
@@ -232,38 +259,49 @@ function formatBlacksmithDSL(text, options) {
     return postProcessPerLine(formattedLines).join('\n');
 }
 
-/**
- * Collapse empty bracket pairs that span adjacent lines.
- *  "something {\n}"  →  "something {}"
- *  "foo(\n)"         →  "foo()"
- *  "bar[\n]"         →  "bar[]"
- *
- * @param {string[]} lines
- * @returns {string[]}
- */
-function collapseEmptyBrackets(lines) {
-    const result = [];
+// 合并跨行的但中间无内容，或者只有一段连续字符的括号和字符串
+function collapseEmptyBrackets(lines: string[]): string[] {
+    const result: string[] = [];
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        if (i + 1 < lines.length) {
-            const nextLine = lines[i + 1];
-            const trimmedLine = line.trimEnd();
-            const trimmedNext = nextLine.trim();
-            if (trimmedLine.endsWith('{') && trimmedNext === '}') {
-                result.push(trimmedLine + '}');
-                i += 2;
-                continue;
+        if(line.endsWith('(') || /\([^)]+$/.test(line)){
+            while(i + 1 < lines.length && lines[i + 1].trim().length == 0){
+                i++;
             }
-            if (trimmedLine.endsWith('(') && trimmedNext === ')') {
-                result.push(trimmedLine + ')');
-                i += 2;
-                continue;
+            if(i + 1 < lines.length){
+                const next =  lines[i + 1].trimStart();
+                if(next.startsWith(')') || /^[^(]+\)/.test(next)){
+                    result.push(line + lines[i + 1].trimStart());
+                    i += 2;
+                    continue;
+                }
             }
-            if (trimmedLine.endsWith('[') && trimmedNext === ']') {
-                result.push(trimmedLine + ']');
-                i += 2;
-                continue;
+        }
+        if(line.endsWith('[') || /\[[^\]]+$/.test(line)){
+            while(i + 1 < lines.length && lines[i + 1].trim().length == 0){
+                i++;
+            }
+            if(i + 1 < lines.length){
+                const next =  lines[i + 1].trimStart();
+                if(next.startsWith(']') || /^[^\[]+\]/.test(next)){
+                    result.push(line + lines[i + 1].trimStart());
+                    i += 2;
+                    continue;
+                }
+            }
+        }
+        if(line.endsWith('{') || /\{[^}]+$/.test(line)){
+            while(i + 1 < lines.length && lines[i + 1].trim().length == 0){
+                i++;
+            }
+            if(i + 1 < lines.length){
+                const next =  lines[i + 1].trimStart();
+                if(next.startsWith('}') || /^[^{]+\}/.test(next)){
+                    result.push(line + lines[i + 1].trimStart());
+                    i += 2;
+                    continue;
+                }
             }
         }
         result.push(line);
@@ -272,12 +310,55 @@ function collapseEmptyBrackets(lines) {
     return result;
 }
 
-/**
- * Per-line micro-formatting (runs after indentation).
- *  - Remove spaces around ->
- *  - Collapse empty brackets on same line: { } → {}
- */
-function postProcessPerLine(lines) {
+function standardizeLineBreaks(lines: string[]): string[] {
+    const temp: string[] = [];
+    for(let i = 0; i < lines.length; i++){
+        if(lines[i].trim() === ''){
+            continue;
+        }
+        temp.push(...splitBeforeBracket(lines[i]))
+    }
+    const res: string[] = [];
+    let i = 0;
+    while (i < temp.length) {
+        let originI = i;
+        while(i + 1 < temp.length && /^(\(|->|\{)/.test(temp[i + 1].trim())){
+            i++;
+        }
+        res.push(temp.slice(originI, i + 1).join(''));
+        i++;
+    }
+    return res;
+}
+
+function splitBeforeBracket(str: string): string[] {
+    if (!str) return [];
+    
+    str = str.trim();
+    const result: string[] = [];
+    let lastIndex = 0;
+    
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '[' || str[i] === '<' || str[i] === '}' || str[i] === ')') {
+            // 如果当前位置是 '['，且不是第一个字符
+            if (i > lastIndex) {
+                result.push(str.substring(lastIndex, i).trim());
+            }
+            // 更新 lastIndex 到当前 '[' 位置
+            lastIndex = i;
+        }
+    }
+    
+    // 处理剩余部分
+    if (lastIndex < str.length) {
+        result.push(str.substring(lastIndex).trim());
+    }
+    
+    return result;
+}
+
+// 去除括号内多余的空格
+function postProcessPerLine(lines: string[]): string[] {
     return lines.map(line => {
         // Remove spaces around ->
         let fixed = line.replace(/\s*->\s*/g, '->');
@@ -306,16 +387,10 @@ function postProcessPerLine(lines) {
     });
 }
 
-
 /**
  * Strip comments from a line, respecting block-comment state.
- *
- * @param {string} line         A single source line (no newline).
- * @param {boolean} inBlockComment  Whether we entered a block comment on a
- *                                  previous line.
- * @returns {{ cleanLine: string, stillInBlockComment: boolean }}
  */
-function removeComments(line, inBlockComment) {
+function removeComments(line: string, inBlockComment: boolean): CommentRemovalResult {
     if (inBlockComment) {
         const endIdx = line.indexOf('*/');
         if (endIdx === -1) {
@@ -358,6 +433,4 @@ function removeComments(line, inBlockComment) {
 /**
  * Deactivate the extension.
  */
-function deactivate() {}
-
-module.exports = { activate, deactivate };
+export function deactivate(): void {}

@@ -3,3 +3,6 @@
 .gitignore
 vsc-extension-quickstart.md
 language-server/**
+src/**
+tsconfig.json
+node_modules/**
